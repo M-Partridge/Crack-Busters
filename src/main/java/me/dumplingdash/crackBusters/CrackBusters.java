@@ -29,6 +29,7 @@ public final class CrackBusters extends JavaPlugin {
     public void onDisable() {
         System.out.println("CrackBusters Stopping");
 
+        GameManager.disable();
         CBConfig.disable();
     }
 

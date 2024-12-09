@@ -46,7 +46,7 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.4.1</version>
                 <configuration>
-                    <outputDirectory>C:\Users\partrm2\Desktop\Minecraft Server\Crack Busters Server\plugins</outputDirectory>
+                    <outputDirectory>C:\Users\dumpl\OneDrive\Documents\Crack Busters\Server\plugins</outputDirectory>
                 </configuration>
             </plugin>
         </plugins>

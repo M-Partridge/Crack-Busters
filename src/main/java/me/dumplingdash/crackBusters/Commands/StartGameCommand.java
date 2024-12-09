@@ -4,12 +4,14 @@ import me.dumplingdash.crackBusters.Core.Game.GameManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 
-public class StartGame implements CommandExecutor {
+import java.util.List;
+
+public class StartGameCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String s, String[] args) {
         GameManager.tryStartGame();
-
         return true;
     }
 }

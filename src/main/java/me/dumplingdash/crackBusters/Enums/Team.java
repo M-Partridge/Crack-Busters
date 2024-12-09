@@ -6,6 +6,7 @@ import net.md_5.bungee.api.ChatColor;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 public enum Team {
     SPECTATOR("Spectator", new Color(156, 156, 156)),
@@ -29,9 +30,11 @@ public enum Team {
         return color;
     }
 
+    public String getColoredName() {
+        return ColorUtils.colorizeText("#0#" + getName(), new ArrayList<>(Collections.singletonList(getColor())));
+    }
+
     public String toString() {
-        String string = ChatColor.of(ColorUtils.darkenColor(color, darkenAmount)) + "[]";
-        string = string.substring(0, 1) + ChatColor.of(color) + name + string.substring(1);
         return ColorUtils.colorizeText("#0#[#1#" + getName() + "#0#]", new ArrayList<>(Arrays.asList(ColorUtils.darkenColor(color, darkenAmount), color)));
     }
 }

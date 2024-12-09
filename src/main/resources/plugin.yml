@@ -1,0 +1,4 @@
+name: CrackBusters
+version: '1.0'
+main: me.dumplingdash.crackBusters.CrackBusters
+api-version: '1.20'

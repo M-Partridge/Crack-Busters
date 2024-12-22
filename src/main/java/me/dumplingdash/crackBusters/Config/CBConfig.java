@@ -21,6 +21,9 @@ public class CBConfig {
     public static int loadInteger(String path) {
         return config.getInt(path, -1);
     }
+    public static long loadLong(String path) {
+        return config.getLong(path);
+    }
     @Nullable
     public static Location loadLocation(String path) {
         return config.getLocation(path, null);

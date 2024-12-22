@@ -1,39 +1,26 @@
 package me.dumplingdash.crackBusters.Utility;
 
-import me.dumplingdash.crackBusters.CrackBusters;
-import org.bukkit.Bukkit;
-import org.bukkit.Particle;
-import org.bukkit.World;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.*;
+
+import java.awt.Color;
 
 public class ParticleUtils {
-    public static void SpawnCube(World world, double x1, double y1, double z1, double x2, double y2, double z2, double particleStep, int ticks) {
-        double minX = Math.min(x1, x2);
-        double maxX = Math.max(x1, x2);
-        double minY = Math.min(y1, y2);
-        double maxY = Math.max(y1, y2);
-        double minZ = Math.min(z1, z2);
-        double maxZ = Math.max(z1, z2);
+    public static void spawnCube(Location corner1, Location corner2, double particleStep, Color color) {
+        if(corner1 == null || corner2 == null) {
+            return;
+        }
+        double minX = Math.min(corner1.getX(), corner2.getX());
+        double maxX = Math.max(corner1.getX(), corner2.getX());
+        double minY = Math.min(corner1.getY(), corner2.getY());
+        double maxY = Math.max(corner1.getY(), corner2.getY());
+        double minZ = Math.min(corner1.getZ(), corner2.getZ());
+        double maxZ = Math.max(corner1.getZ(), corner2.getZ());
 
-        BukkitRunnable task = new BukkitRunnable() {
-            int ticksPast = 0;
-            @Override
-            public void run() {
-                ++ticksPast;
-                for(double x = minX; x < maxX; ++x) {
-                    for(double y = minY; y < maxY; ++y) {
-                        for(double z = minZ; z < maxZ; ++z) {
-                            world.spawnParticle(Particle.REDSTONE, x, y, z, 1);
-                        }
-                    }
-                }
+        Location minCorner = new Location(corner1.getWorld(), minX, minY, minZ);
+        Location maxCorner = new Location(corner1.getWorld(), maxX, maxY, maxZ);
 
-                if(ticksPast > ticks) this.cancel();
-            }
-        };
-
-        task.runTaskTimer(CrackBusters.instance, 0L, 1L);
-
-
+        Particle.DustOptions dustOptions = new Particle.DustOptions(org.bukkit.Color.fromRGB(color.getRed(), color.getGreen(), color.getRed()), 1f);
+        corner1.getWorld().spawnParticle(Particle.REDSTONE, minCorner, 1, dustOptions);
+        corner1.getWorld().spawnParticle(Particle.REDSTONE, maxCorner, 1, dustOptions);
     }
 }

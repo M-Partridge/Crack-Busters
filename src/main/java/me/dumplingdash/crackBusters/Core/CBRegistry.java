@@ -3,16 +3,18 @@ package me.dumplingdash.crackBusters.Core;
 import me.dumplingdash.crackBusters.Commands.JoinTeamCommand;
 import me.dumplingdash.crackBusters.Commands.SetSpawnCommand;
 import me.dumplingdash.crackBusters.Commands.StartGameCommand;
+import me.dumplingdash.crackBusters.Core.Game.GameManager;
 import me.dumplingdash.crackBusters.CrackBusters;
-import me.dumplingdash.crackBusters.Events.Spigot.BlockBreakListener;
-import me.dumplingdash.crackBusters.Events.Spigot.BlockDamageListener;
-import me.dumplingdash.crackBusters.Events.Spigot.BlockPlaceListener;
-import me.dumplingdash.crackBusters.Events.Spigot.PlayerJoinListener;
+import me.dumplingdash.crackBusters.Event.Listener.PlayerInteractListener;
+import me.dumplingdash.crackBusters.Event.Listener.PlayerJoinListener;
+import me.dumplingdash.crackBusters.Event.Listener.ToggleSneakListener;
 import me.dumplingdash.crackBusters.Item.CBItem;
 import me.dumplingdash.crackBusters.Item.Items.Pickaxe;
+import me.dumplingdash.crackBusters.Item.Items.Sniffer;
 import me.dumplingdash.crackBusters.Item.Items.Sword;
+import me.dumplingdash.crackBusters.Item.Items.ZoneTool;
+import me.dumplingdash.crackBusters.Utility.CommonUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
 
@@ -28,10 +30,10 @@ public class CBRegistry {
     }
     public static void registerListeners() {
         Arrays.asList(
+                new GameManager(),
+                new ToggleSneakListener(),
                 new PlayerJoinListener(),
-                new BlockBreakListener(),
-                new BlockDamageListener(),
-                new BlockPlaceListener()
+                new PlayerInteractListener()
         ).forEach(listener -> Bukkit.getServer().getPluginManager().registerEvents(listener, CrackBusters.instance));
     }
     public static void registerCommands() {
@@ -54,10 +56,12 @@ public class CBRegistry {
     }
     public static void registerItems() {
         Arrays.asList(
+                new Sniffer(),
                 new Sword(),
-                new Pickaxe()
+                new Pickaxe(),
+                new ZoneTool()
         ).forEach(item -> {
-            cbItems.put(item.getID(), item);
+            cbItems.put(item.getID(),  item);
         });
     }
 

@@ -11,7 +11,7 @@ import java.util.Collections;
 public enum Team {
     SPECTATOR("Spectator", new Color(156, 156, 156)),
     HUNTER("Hunter", new Color(158, 21, 0)),
-    CRACK_BUSTER("Crack Buster", new Color(26, 98, 171));
+    CRACK_BUSTER("Crack Buster", new Color(70, 150, 220));
 
     private final float darkenAmount = .75f; // Amount to darken [] on team name
     private final String name;

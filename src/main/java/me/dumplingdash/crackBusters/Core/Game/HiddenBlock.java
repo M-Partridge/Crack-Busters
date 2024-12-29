@@ -1,6 +1,7 @@
 package me.dumplingdash.crackBusters.Core.Game;
 
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 
 import java.awt.*;
@@ -10,13 +11,15 @@ public class HiddenBlock {
     private boolean isFound;
     private Location location;
     private Location pedestalLocation;
-    private final Color color;
-    public HiddenBlock(Location pedestalLocation, Color color) {
+    private final ChatColor color;
+    private final String name;
+    public HiddenBlock(Location pedestalLocation, ChatColor color, String name) {
         isPlaced = false;
         isFound = false;
         location = null;
         this.pedestalLocation = pedestalLocation;
         this.color = color;
+        this.name = name;
     }
 
     public boolean isPlaced() {
@@ -35,16 +38,22 @@ public class HiddenBlock {
         return pedestalLocation;
     }
 
-    public Color getColor() {
+    public ChatColor getColor() {
         return color;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public void setPlaced(boolean isPlaced) {
         this.isPlaced = isPlaced;
+        GameManager.updateAllPlayerScoreboards();
     }
 
     public void setFound(boolean isFound) {
         this.isFound = isFound;
+        GameManager.updateAllPlayerScoreboards();
     }
 
     public void setLocation(Location location) {
@@ -53,5 +62,6 @@ public class HiddenBlock {
 
     public void setPedestalLocation(Location location) {
         pedestalLocation = location;
+        System.out.println("Setting Pedestal Location " + name + " " + location);
     }
 }

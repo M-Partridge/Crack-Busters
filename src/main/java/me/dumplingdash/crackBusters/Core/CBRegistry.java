@@ -1,5 +1,6 @@
 package me.dumplingdash.crackBusters.Core;
 
+import me.dumplingdash.crackBusters.Commands.EndGameCommand;
 import me.dumplingdash.crackBusters.Commands.JoinTeamCommand;
 import me.dumplingdash.crackBusters.Commands.SetSpawnCommand;
 import me.dumplingdash.crackBusters.Commands.StartGameCommand;
@@ -9,10 +10,7 @@ import me.dumplingdash.crackBusters.Event.Listener.PlayerInteractListener;
 import me.dumplingdash.crackBusters.Event.Listener.PlayerJoinListener;
 import me.dumplingdash.crackBusters.Event.Listener.ToggleSneakListener;
 import me.dumplingdash.crackBusters.Item.CBItem;
-import me.dumplingdash.crackBusters.Item.Items.Pickaxe;
-import me.dumplingdash.crackBusters.Item.Items.Sniffer;
-import me.dumplingdash.crackBusters.Item.Items.Sword;
-import me.dumplingdash.crackBusters.Item.Items.ZoneTool;
+import me.dumplingdash.crackBusters.Item.Items.*;
 import me.dumplingdash.crackBusters.Utility.CommonUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
@@ -38,6 +36,7 @@ public class CBRegistry {
     }
     public static void registerCommands() {
         Arrays.asList(
+                new AbstractMap.SimpleEntry<>("endgame", new EndGameCommand()),
                 new AbstractMap.SimpleEntry<>("jointeam", new JoinTeamCommand()),
                 new AbstractMap.SimpleEntry<>("startgame", new StartGameCommand()),
                 new AbstractMap.SimpleEntry<>("setspawn", new SetSpawnCommand())
@@ -58,6 +57,7 @@ public class CBRegistry {
         Arrays.asList(
                 new Sniffer(),
                 new Sword(),
+                new PedestalTool(),
                 new Pickaxe(),
                 new ZoneTool()
         ).forEach(item -> {

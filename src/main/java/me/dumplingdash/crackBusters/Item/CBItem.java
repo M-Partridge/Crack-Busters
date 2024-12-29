@@ -7,12 +7,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public abstract class CBItem {
-
+    public static final Color loreColor = new Color(92, 92, 92);
     public abstract String getName();
     public abstract List<String> getLore();
     public abstract ItemMeta modifyMeta(ItemMeta meta);

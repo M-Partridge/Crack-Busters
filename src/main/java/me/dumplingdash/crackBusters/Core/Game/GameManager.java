@@ -20,6 +20,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -73,10 +74,10 @@ public class GameManager implements Listener {
         lobbySpawn = CBConfig.loadLocation(ConfigPaths.lobbySpawn);
         gameSpawn = CBConfig.loadLocation(ConfigPaths.gameSpawn);
         gameState = GameState.LOBBY;
-        hiddenBlocks.put(Material.GOLD_BLOCK, new HiddenBlock(CBConfig.loadLocation(ConfigPaths.goldPedestal), new Color(235, 178, 21)));
-        hiddenBlocks.put(Material.EMERALD_BLOCK, new HiddenBlock(CBConfig.loadLocation(ConfigPaths.emeraldPedestal), new Color(24, 219, 24)));
-        hiddenBlocks.put(Material.DIAMOND_BLOCK, new HiddenBlock(CBConfig.loadLocation(ConfigPaths.diamondPedestal), new Color(0, 199, 235)));
-        hiddenBlocks.put(Material.NETHERITE_BLOCK, new HiddenBlock(CBConfig.loadLocation(ConfigPaths.netheritePedestal), new Color(54, 47, 45)));
+        hiddenBlocks.put(Material.GOLD_BLOCK, new HiddenBlock(CBConfig.loadLocation(ConfigPaths.goldPedestal), ChatColor.GOLD, "Gold"));
+        hiddenBlocks.put(Material.EMERALD_BLOCK, new HiddenBlock(CBConfig.loadLocation(ConfigPaths.emeraldPedestal), ChatColor.GREEN, "Emerald"));
+        hiddenBlocks.put(Material.DIAMOND_BLOCK, new HiddenBlock(CBConfig.loadLocation(ConfigPaths.diamondPedestal), ChatColor.AQUA, "Diamond"));
+        hiddenBlocks.put(Material.NETHERITE_BLOCK, new HiddenBlock(CBConfig.loadLocation(ConfigPaths.netheritePedestal), ChatColor.DARK_GRAY, "Netherite"));
         zones.put(Zone.GOLD, new Tuple<>(CBConfig.loadLocation(ConfigPaths.goldZone1), CBConfig.loadLocation(ConfigPaths.goldZone2)));
         zones.put(Zone.EMERALD, new Tuple<>(CBConfig.loadLocation(ConfigPaths.emeraldZone1), CBConfig.loadLocation(ConfigPaths.emeraldZone2)));
         zones.put(Zone.DIAMOND, new Tuple<>(CBConfig.loadLocation(ConfigPaths.diamondZone1), CBConfig.loadLocation(ConfigPaths.diamondZone2)));
@@ -85,8 +86,6 @@ public class GameManager implements Listener {
         blockPlacedSpeedDuration = CBConfig.loadInteger(ConfigPaths.blockPlacedSpeedDuration);
         zoneCooldownTime = CBConfig.loadLong(ConfigPaths.zoneCooldownTimePath);
         hunterTeleportDelay = CBConfig.loadInteger(ConfigPaths.hunterTeleportDelay);
-
-        startZoneOutlineTask();
     }
 
     public static void disable() {
@@ -149,6 +148,9 @@ public class GameManager implements Listener {
         clearTeamInventories(Team.HUNTER);
         clearTeamInventories(Team.CRACK_BUSTER);
 
+        clearTeamPotionEffects(Team.HUNTER);
+        clearTeamPotionEffects(Team.CRACK_BUSTER);
+
         // give blocks to hunters
         List<Material> blocks = new ArrayList<>(hiddenBlocks.keySet());
         while(!blocks.isEmpty()) {
@@ -157,6 +159,8 @@ public class GameManager implements Listener {
                 blocks.remove(0);
             }
         }
+
+        updateAllPlayerScoreboards();
     }
 
     private static void startBreaking() {
@@ -171,6 +175,9 @@ public class GameManager implements Listener {
 
         clearTeamInventories(Team.HUNTER);
         clearTeamInventories(Team.CRACK_BUSTER);
+
+        clearTeamPotionEffects(Team.HUNTER);
+        clearTeamPotionEffects(Team.CRACK_BUSTER);
 
         giveTeamPotionEffect(Team.HUNTER, PotionEffectType.SLOW_DIGGING, Integer.MAX_VALUE, Integer.MAX_VALUE);
         giveTeamPotionEffect(Team.CRACK_BUSTER, PotionEffectType.SLOW_DIGGING, Integer.MAX_VALUE, Integer.MAX_VALUE);
@@ -187,6 +194,8 @@ public class GameManager implements Listener {
 
         giveTeamItems(crackBusterItems, Team.CRACK_BUSTER);
 
+        updateAllPlayerScoreboards();
+
         // start hunter teleport task
         hunterTeleportTask = new BukkitRunnable() {
             @Override
@@ -197,22 +206,18 @@ public class GameManager implements Listener {
     }
 
     private static void setPlayerScoreboard(CBPlayer player) {
-        Scoreboard scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
 
-        Objective objective = scoreboard.registerNewObjective("test", "dummy", "Test Scoreboard");
+    }
 
-        objective.setDisplaySlot(DisplaySlot.SIDEBAR);
-
-        Score score1 = objective.getScore("Test score 1");
-        score1.setScore(0);
-
-        Score score2 = objective.getScore("test score 2");
-        score2.setScore(10);
-
-        player.getPlayer().setScoreboard(scoreboard);
+    public static void updateAllPlayerScoreboards() {
+        for(CBPlayer player : players.values()) {
+            player.updateScoreboard();
+        }
     }
 
     public static void endGame(World world, Team winningTeam) {
+        gameState = GameState.LOBBY;
+
         // make hidden block locations and pedestals air
         for(HiddenBlock hiddenBlock : hiddenBlocks.values()) {
             if(hiddenBlock.getLocation() != null) {
@@ -226,15 +231,22 @@ public class GameManager implements Listener {
             hiddenBlock.setLocation(null);
         }
 
-        CommonUtil.sendTitleToAll(winningTeam.getColoredName(), "Win!", 10, 60, 10);
+        if(winningTeam != null) {
+            CommonUtil.sendTitleToAll(winningTeam.getColoredName(), "Win!", 10, 60, 10);
+        }
 
         clearTeamInventories(Team.HUNTER);
         clearTeamInventories(Team.CRACK_BUSTER);
+
+        clearTeamPotionEffects(Team.HUNTER);
+        clearTeamPotionEffects(Team.CRACK_BUSTER);
 
         teleportTeam(Team.HUNTER, lobbySpawn);
         teleportTeam(Team.CRACK_BUSTER, lobbySpawn);
 
         hunterTeleportTask.cancel();
+
+        updateAllPlayerScoreboards();
     }
 
     private static void teleportTeam(Team team, Location location) {
@@ -269,6 +281,22 @@ public class GameManager implements Listener {
         } else if(team == Team.HUNTER) {
             for(CBPlayer player : hunters) {
                 player.getPlayer().getInventory().clear();
+            }
+        }
+    }
+
+    private static void clearTeamPotionEffects(Team team) {
+        if(team == Team.CRACK_BUSTER) {
+            for(CBPlayer player : crackBusters) {
+                for (PotionEffect effect : player.getPlayer().getActivePotionEffects()) {
+                    player.getPlayer().removePotionEffect(effect.getType());
+                }
+            }
+        } else if(team == Team.HUNTER) {
+            for(CBPlayer player : hunters) {
+                for (PotionEffect effect : player.getPlayer().getActivePotionEffects()) {
+                    player.getPlayer().removePotionEffect(effect.getType());
+                }
             }
         }
     }
@@ -310,7 +338,7 @@ public class GameManager implements Listener {
     public static void handlePlayerJoin(PlayerJoinEvent event) {
         players.put(event.getPlayer().getUniqueId(), new CBPlayer(event.getPlayer()));
         spectators.add(players.get(event.getPlayer().getUniqueId()));
-        setPlayerScoreboard(players.get(event.getPlayer().getUniqueId()));
+        players.get(event.getPlayer().getUniqueId()).updateScoreboard();
     }
 
     @EventHandler
@@ -346,7 +374,9 @@ public class GameManager implements Listener {
                 return;
             }
             // check if placed on pedestal
-            if(hiddenBlock.getPedestalLocation() != location) {
+            if(!hiddenBlock.getPedestalLocation().equals(location)) {
+                System.out.println(location);
+                System.out.println(hiddenBlock.getPedestalLocation());
                 player.sendErrorMessage("Place the block on the correct pedestal!");
                 event.setCancelled(true);
                 return;
@@ -356,9 +386,10 @@ public class GameManager implements Listener {
             if(allBlocksFound()) {
                 endGame(event.getBlock().getWorld(), Team.CRACK_BUSTER);
             } else {
+                // TODO : add player name that placed block
                 // broadcast message
-                CommonUtil.sendTitleToAll(ColorUtils.colorizeText("#0#" + material.name(),
-                        new ArrayList<>(Collections.singletonList(hiddenBlock.getColor()))), "Found", 10, 60, 10);
+                CommonUtil.sendTitleToAll(ColorUtils.colorizeText("#0#" + hiddenBlock.getName() + " Block",
+                        new ArrayList<>(Collections.singletonList(hiddenBlock.getColor().asBungee().getColor()))), "Found", 10, 60, 10);
 
                 // give player speed
                 player.applyPotionEffect(PotionEffectType.SPEED, blockPlacedSpeedDuration, blockPlacedSpeedAmplifier);
@@ -438,21 +469,10 @@ public class GameManager implements Listener {
             if(location.getX() >= minX && location.getX() <= maxX && location.getY() >= minY
                     && location.getY() <= maxY && location.getZ() >= minZ && location.getZ() <= maxZ) {
                 Bukkit.broadcastMessage(ChatColor.BOLD + "A player has cross the " +
-                        ColorUtils.colorizeText("#0#" + zone.getName(), new ArrayList<>(Arrays.asList(hiddenBlocks.get(zone.getMaterial()).getColor()))));
+                        ColorUtils.colorizeText("#0#" + zone.getName(), new ArrayList<>(Arrays.asList(hiddenBlocks.get(zone.getMaterial()).getColor().asBungee().getColor()))));
                 player.setZone(zone);
                 zoneCooldown.put(player, System.currentTimeMillis());
             }
-        }
-    }
-
-    private static void startZoneOutlineTask() {
-        for(Zone zone : zones.keySet()) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    ParticleUtils.spawnCube(zones.get(zone).getFirst(), zones.get(zone).getSecond(), 1, hiddenBlocks.get(zone.getMaterial()).getColor());
-                }
-            }.runTaskTimer(CrackBusters.instance, 0L, 1L);
         }
     }
 
@@ -487,6 +507,10 @@ public class GameManager implements Listener {
         return hiddenBlocks.getOrDefault(material, null);
     }
 
+    public static HashMap<Material, HiddenBlock> getHiddenBlocks() {
+        return hiddenBlocks;
+    }
+
     public static void setGameSpawn(Location newGameSpawn) {
         gameSpawn = newGameSpawn;
     }
@@ -504,6 +528,13 @@ public class GameManager implements Listener {
         } else if (which == 2) {
             zones.get(zone).setSecond(location);
         }
+    }
+
+    public static void setPedestalLocation(Zone zone, Location location) {
+        if(zone == null || location == null) {
+            return;
+        }
+        hiddenBlocks.get(zone.getMaterial()).setPedestalLocation(location);
     }
 
     public static void setPlayerTeam(Player player, Team team) {

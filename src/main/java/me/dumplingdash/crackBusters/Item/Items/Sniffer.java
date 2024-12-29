@@ -14,9 +14,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class Sniffer extends CBItem implements RightClickAbility {
+    private static final HashMap<CBPlayer, Long> cooldown = new HashMap<>();
+    public static final int cooldownTime = 5; // seconds
     @Override
     public String getName() {
         return "The Sniffer";
@@ -60,6 +63,12 @@ public class Sniffer extends CBItem implements RightClickAbility {
             return;
         }
 
+        // check if on cooldown
+        if(getCooldownTime(player) != 0) {
+            player.sendErrorMessage("Sniffer on cooldown");
+            return;
+        }
+
         double distance = hiddenBlock.getLocation().distance(player.getPlayer().getLocation());
         String message;
         if(distance > 200) {
@@ -76,5 +85,13 @@ public class Sniffer extends CBItem implements RightClickAbility {
             message = "Take a look around";
         }
         player.getPlayer().sendMessage(message);
+
+        // apply cooldown
+        cooldown.put(player, System.currentTimeMillis());
+    }
+
+    public long getCooldownTime(CBPlayer player) {
+        long lastUse = cooldown.getOrDefault(player, 0L);
+        return Math.max(System.currentTimeMillis() - (lastUse + Sniffer.cooldownTime * 1000), 0);
     }
 }

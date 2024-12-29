@@ -10,7 +10,6 @@ import me.dumplingdash.crackBusters.Item.RightClickAbility;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
@@ -20,19 +19,18 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.Arrays;
 import java.util.List;
 
-public class ZoneTool extends CBItem implements RightClickAbility, LeftClickAbility {
-    private final static NamespacedKey modeKey = new NamespacedKey(CrackBusters.instance, "ZoneToolMode");
+public class PedestalTool extends CBItem implements RightClickAbility, LeftClickAbility {
+    private final static NamespacedKey modeKey = new NamespacedKey(CrackBusters.instance, "PedestalToolMode");
     @Override
     public String getName() {
-        return "Zone Tool";
+        return "Pedestal Tool";
     }
 
     @Override
     public List<String> getLore() {
         return Arrays.asList(
-                ChatColor.of(loreColor) + "Shift-Left Click to change mode",
-                ChatColor.of(loreColor) + "Right Click to set zone corner 1",
-                ChatColor.of(loreColor) + "Left Click to set zone corner 2"
+                ChatColor.of(CBItem.loreColor) + "Shift-Left Click to change mode",
+                ChatColor.of(CBItem.loreColor) + "Right Click to set a pedestal location"
         );
     }
 
@@ -79,7 +77,8 @@ public class ZoneTool extends CBItem implements RightClickAbility, LeftClickAbil
         if(mode == null || event.getClickedBlock() == null) {
             return;
         }
-        GameManager.setZoneLocation(mode, event.getClickedBlock().getLocation(), 2);
+        GameManager.setPedestalLocation(mode, event.getClickedBlock().getLocation());
+        event.getPlayer().sendMessage("Set " + mode.getName() + " to " + event.getClickedBlock().getLocation().toString());
     }
 
     private Zone getMode(ItemStack item) {

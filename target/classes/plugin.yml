@@ -3,6 +3,9 @@ version: '1.0'
 main: me.dumplingdash.crackBusters.CrackBusters
 api-version: '1.20'
 commands:
+  endgame:
+    description: ends the game
+    usage: /<command>
   jointeam:
     description: join a team
     usage: /<command> hunters | crackbusters | spectators

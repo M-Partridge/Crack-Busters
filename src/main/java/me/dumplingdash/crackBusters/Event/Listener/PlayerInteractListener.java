@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 public class PlayerInteractListener implements Listener {
@@ -16,6 +17,7 @@ public class PlayerInteractListener implements Listener {
     public static void onPlayerInteract(PlayerInteractEvent event) {
         ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
         CBItem cbItem = ItemUtil.getCBItem(item);
+        if(event.getHand() != EquipmentSlot.HAND) return;
         if(event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             if(cbItem instanceof RightClickAbility) {
                 ((RightClickAbility) cbItem).handleRightClick(event);

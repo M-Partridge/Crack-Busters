@@ -13,8 +13,8 @@ me\dumplingdash\crackBusters\Core\Game\GameManager$3.class
 me\dumplingdash\crackBusters\Core\Game\GameManager$4.class
 me\dumplingdash\crackBusters\Enums\GameState.class
 me\dumplingdash\crackBusters\CrackBusters.class
-me\dumplingdash\crackBusters\Utility\ParticleUtils.class
 me\dumplingdash\crackBusters\Event\Listener\PlayerInteractListener.class
+me\dumplingdash\crackBusters\Commands\EndGameCommand.class
 me\dumplingdash\crackBusters\Core\Game\GameManager$1.class
 me\dumplingdash\crackBusters\Item\Items\Sniffer.class
 me\dumplingdash\crackBusters\Utility\CommonUtil.class
@@ -24,10 +24,10 @@ me\dumplingdash\crackBusters\Item\LeftClickAbility.class
 me\dumplingdash\crackBusters\Item\Items\Pickaxe.class
 me\dumplingdash\crackBusters\Item\RightClickAbility.class
 me\dumplingdash\crackBusters\Commands\JoinTeamCommand.class
+me\dumplingdash\crackBusters\Item\Items\PedestalTool.class
 me\dumplingdash\crackBusters\Enums\Team.class
 me\dumplingdash\crackBusters\Item\CBItem.class
 me\dumplingdash\crackBusters\Core\Game\GameManager$2.class
 me\dumplingdash\crackBusters\Utility\ItemUtil.class
 me\dumplingdash\crackBusters\Item\Items\Sword.class
-me\dumplingdash\crackBusters\Core\Game\GameManager$5.class
 me\dumplingdash\crackBusters\Utility\Tuple.class

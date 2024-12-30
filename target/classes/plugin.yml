@@ -6,6 +6,9 @@ commands:
   endgame:
     description: ends the game
     usage: /<command>
+  giveitem:
+    description: gives you a custom item
+    usage: /<command> itemID
   jointeam:
     description: join a team
     usage: /<command> hunters | crackbusters | spectators
@@ -15,4 +18,7 @@ commands:
   setspawn:
     description: sets spawn for game locations
     usage: /<command> game | lobby
+  setzone:
+    description: sets a players zone
+    usage: /<command> player zone
 

@@ -4,10 +4,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 
 public enum Zone {
-    GOLD(Material.GOLD_BLOCK, "Gold Zone", ChatColor.GOLD),
-    EMERALD(Material.EMERALD_BLOCK, "Emerald Zone", ChatColor.GREEN),
-    DIAMOND(Material.DIAMOND_BLOCK, "Diamond Zone", ChatColor.AQUA),
-    NETHERITE(Material.NETHERITE_BLOCK, "Netherite Zone", ChatColor.DARK_GRAY);
+    GOLD(Material.GOLD_BLOCK, "Gold", ChatColor.GOLD),
+    EMERALD(Material.EMERALD_BLOCK, "Emerald", ChatColor.GREEN),
+    DIAMOND(Material.DIAMOND_BLOCK, "Diamond", ChatColor.AQUA),
+    NETHERITE(Material.NETHERITE_BLOCK, "Netherite", ChatColor.DARK_GRAY);
 
     private final Material material;
     private final String name;
@@ -25,6 +25,9 @@ public enum Zone {
     }
     public ChatColor getColor() {
         return color;
+    }
+    public String getColoredName() {
+        return getColor() + getName();
     }
 
 }

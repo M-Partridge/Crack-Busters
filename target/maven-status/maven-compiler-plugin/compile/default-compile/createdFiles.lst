@@ -1,6 +1,7 @@
 me\dumplingdash\crackBusters\Commands\SetSpawnCommand.class
 me\dumplingdash\crackBusters\Core\Game\GameManager.class
-me\dumplingdash\crackBusters\Event\Listener\PlayerJoinListener.class
+me\dumplingdash\crackBusters\Item\Items\ZoneAbility.class
+me\dumplingdash\crackBusters\Commands\SetZoneCommand.class
 me\dumplingdash\crackBusters\Utility\SoundUtil.class
 me\dumplingdash\crackBusters\Core\Game\HiddenBlock.class
 me\dumplingdash\crackBusters\Core\Keys.class
@@ -9,7 +10,9 @@ me\dumplingdash\crackBusters\Core\CBRegistry.class
 me\dumplingdash\crackBusters\Item\Items\ZoneTool.class
 me\dumplingdash\crackBusters\Commands\StartGameCommand.class
 me\dumplingdash\crackBusters\Utility\ColorUtils.class
+me\dumplingdash\crackBusters\Commands\GiveItemCommand.class
 me\dumplingdash\crackBusters\Core\Game\GameManager$3.class
+me\dumplingdash\crackBusters\Item\Items\Crack.class
 me\dumplingdash\crackBusters\Core\Game\GameManager$4.class
 me\dumplingdash\crackBusters\Enums\GameState.class
 me\dumplingdash\crackBusters\CrackBusters.class
@@ -18,6 +21,7 @@ me\dumplingdash\crackBusters\Commands\EndGameCommand.class
 me\dumplingdash\crackBusters\Core\Game\GameManager$1.class
 me\dumplingdash\crackBusters\Item\Items\Sniffer.class
 me\dumplingdash\crackBusters\Utility\CommonUtil.class
+me\dumplingdash\crackBusters\Core\Game\GameManager$6.class
 me\dumplingdash\crackBusters\Core\Game\CBPlayer.class
 me\dumplingdash\crackBusters\Core\Game\Zone.class
 me\dumplingdash\crackBusters\Item\LeftClickAbility.class
@@ -30,4 +34,6 @@ me\dumplingdash\crackBusters\Item\CBItem.class
 me\dumplingdash\crackBusters\Core\Game\GameManager$2.class
 me\dumplingdash\crackBusters\Utility\ItemUtil.class
 me\dumplingdash\crackBusters\Item\Items\Sword.class
+me\dumplingdash\crackBusters\Item\Items\Radar.class
+me\dumplingdash\crackBusters\Core\Game\GameManager$5.class
 me\dumplingdash\crackBusters\Utility\Tuple.class

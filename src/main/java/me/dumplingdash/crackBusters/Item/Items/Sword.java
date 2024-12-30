@@ -1,8 +1,11 @@
 package me.dumplingdash.crackBusters.Item.Items;
 
 import me.dumplingdash.crackBusters.Item.CBItem;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -16,22 +19,23 @@ public class Sword extends CBItem {
 
     @Override
     public String getName() {
-        return "Sword";
+        return ChatColor.BOLD + "Cracker Killer";
     }
 
     @Override
     public List<String> getLore() {
         return Arrays.asList(
-                "test lore 1",
-                "test lore 2"
+                ChatColor.of(CBItem.loreColor) + "Sharpness ∞"
         );
     }
 
     @Override
     public ItemMeta modifyMeta(ItemMeta meta) {
         meta.setUnbreakable(true);
-        meta.removeAttributeModifier(Attribute.GENERIC_ATTACK_DAMAGE);
-        meta.removeAttributeModifier(Attribute.GENERIC_ATTACK_SPEED);
+        meta.addEnchant(Enchantment.ARROW_INFINITE, 1, true);
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         return meta;
     }
 

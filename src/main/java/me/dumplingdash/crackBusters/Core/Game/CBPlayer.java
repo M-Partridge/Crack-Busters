@@ -41,6 +41,10 @@ public class CBPlayer {
         player.sendMessage("setting team to " + newTeam.getName());
         // Update team
         team = newTeam;
+        Team.HUNTER.getTeam().removeEntry(player.getName());
+        Team.CRACK_BUSTER.getTeam().removeEntry(player.getName());
+        Team.SPECTATOR.getTeam().removeEntry(player.getName());
+        newTeam.getTeam().addEntry(player.getName());
 
         // Update Display Name
         String name = team.toString() + " " + player.getName();
@@ -51,9 +55,19 @@ public class CBPlayer {
         zone = newZone;
     }
     public void updateScoreboard() {
-        Scoreboard scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
+        Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
 
-        Objective objective = scoreboard.registerNewObjective("crackBusters", "dummy", ChatColor.BOLD + "Crack Busters");
+        for (String entry : scoreboard.getEntries()) {
+            scoreboard.resetScores(entry);
+        }
+
+        Objective objective;
+
+        if(scoreboard.getObjective("crackBusters") == null) {
+            objective = scoreboard.registerNewObjective("crackBusters", "dummy", ChatColor.BOLD + "Crack Busters");
+        } else {
+            objective = scoreboard.getObjective("crackBusters");
+        }
 
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
@@ -81,14 +95,17 @@ public class CBPlayer {
             ++num;
         }
 
-        Score blank4 = objective.getScore(" ");
-        blank4.setScore(4);
+        Score blank1 = objective.getScore(" ");
+        blank1.setScore(num);
+        ++num;
 
         Score gameState = objective.getScore(ChatColor.BOLD + "Game State: " + ChatColor.WHITE + GameManager.getGameState().getName());
-        gameState.setScore(5);
+        gameState.setScore(num);
+        ++num;
 
-        Score blank6 = objective.getScore("");
-        blank6.setScore(6);
+        Score blank2 = objective.getScore("");
+        blank2.setScore(num);
+        ++num;
 
         player.getPlayer().setScoreboard(scoreboard);
     }

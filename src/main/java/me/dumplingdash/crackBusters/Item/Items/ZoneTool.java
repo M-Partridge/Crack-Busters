@@ -71,6 +71,7 @@ public class ZoneTool extends CBItem implements RightClickAbility, LeftClickAbil
             }
             GameManager.setZoneLocation(mode, event.getClickedBlock().getLocation(), 1);
         }
+        event.setCancelled(true);
     }
 
     @Override
@@ -80,6 +81,7 @@ public class ZoneTool extends CBItem implements RightClickAbility, LeftClickAbil
             return;
         }
         GameManager.setZoneLocation(mode, event.getClickedBlock().getLocation(), 2);
+        event.setCancelled(true);
     }
 
     private Zone getMode(ItemStack item) {

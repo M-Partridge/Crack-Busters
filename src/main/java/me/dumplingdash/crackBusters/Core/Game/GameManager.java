@@ -2,21 +2,23 @@ package me.dumplingdash.crackBusters.Core.Game;
 
 import me.dumplingdash.crackBusters.Config.CBConfig;
 import me.dumplingdash.crackBusters.Config.ConfigPaths;
+import me.dumplingdash.crackBusters.Item.Items.*;
 import me.dumplingdash.crackBusters.Utility.*;
 import me.dumplingdash.crackBusters.CrackBusters;
 import me.dumplingdash.crackBusters.Enums.GameState;
 import me.dumplingdash.crackBusters.Enums.Team;
 import me.dumplingdash.crackBusters.Item.CBItem;
-import me.dumplingdash.crackBusters.Item.Items.Pickaxe;
-import me.dumplingdash.crackBusters.Item.Items.Sword;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
@@ -24,18 +26,13 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Score;
-import org.bukkit.scoreboard.Scoreboard;
 
 import javax.annotation.Nullable;
-import java.awt.*;
-import java.awt.Color;
 import java.util.*;
 import java.util.List;
 
 public class GameManager implements Listener {
+    private static Random random;
     private static Location lobbySpawn;
     private static Location gameSpawn;
     private static GameState gameState;
@@ -64,13 +61,22 @@ public class GameManager implements Listener {
             return super.add(player);
         }
     };
+    private static final ArrayList<CBPlayer> deadCrackBusters = new ArrayList<>() {
+        @Override
+        public boolean add(CBPlayer player) {
+            player.setTeam(Team.CRACK_BUSTER);
+            return super.add(player);
+        }
+    };
     private static int blockPlacedSpeedAmplifier; // amplifier for speed given to player when hidden block is found
     private static int blockPlacedSpeedDuration;
     private static int hunterTeleportDelay; // time before hunters are teleported to the game spawn in seconds
     private static long zoneCooldownTime;
     private static BukkitTask hunterTeleportTask;
+    private static BukkitTask hunterTeleportMessageTask;
 
     public static void enable() {
+        random = new Random();
         lobbySpawn = CBConfig.loadLocation(ConfigPaths.lobbySpawn);
         gameSpawn = CBConfig.loadLocation(ConfigPaths.gameSpawn);
         gameState = GameState.LOBBY;
@@ -107,12 +113,14 @@ public class GameManager implements Listener {
         CBConfig.saveData(ConfigPaths.blockPlacedSpeedDuration, blockPlacedSpeedDuration);
         CBConfig.saveData(ConfigPaths.zoneCooldownTimePath, zoneCooldownTime);
         CBConfig.saveData(ConfigPaths.hunterTeleportDelay, hunterTeleportDelay);
+
+        endGame(lobbySpawn.getWorld(), null);
     }
 
     public static void tryStartGame() {
         if(gameState != GameState.LOBBY) {
             CrackBusters.logMessage("Could not start game because game has already started");
-            //return;
+            return;
         }
         if(hunters.isEmpty() || crackBusters.isEmpty()) {
             CrackBusters.logMessage("Could not start game because one or both teams don't have at least 1 player");
@@ -120,16 +128,16 @@ public class GameManager implements Listener {
         }
         if(lobbySpawn == null) {
             CrackBusters.logMessage("Could not start game because no lobby spawn has been set");
-            //return;
+            return;
         }
         if(gameSpawn == null) {
             CrackBusters.logMessage("Could not start game because no game spawn has been set");
-           /// return;
+            return;
         }
         for(Material material : hiddenBlocks.keySet()) {
             if(hiddenBlocks.get(material).getPedestalLocation() == null) {
                 CrackBusters.logMessage("Could not start game because " + material.name() + " has no pedestal location");
-               // return;
+                return;
             }
         }
 
@@ -180,33 +188,45 @@ public class GameManager implements Listener {
         clearTeamPotionEffects(Team.CRACK_BUSTER);
 
         giveTeamPotionEffect(Team.HUNTER, PotionEffectType.SLOW_DIGGING, Integer.MAX_VALUE, Integer.MAX_VALUE);
+        giveTeamPotionEffect(Team.HUNTER, PotionEffectType.GLOWING, Integer.MAX_VALUE, 1);
         giveTeamPotionEffect(Team.CRACK_BUSTER, PotionEffectType.SLOW_DIGGING, Integer.MAX_VALUE, Integer.MAX_VALUE);
 
         // give players their items
         List<ItemStack> hunterItems = new ArrayList<>();
         hunterItems.add((new Sword()).getItem());
-        hunterItems.add((new Pickaxe()).getItem());
+        hunterItems.add((new Radar()).getItem());
 
         giveTeamItems(hunterItems, Team.HUNTER);
 
         List<ItemStack> crackBusterItems = new ArrayList<>();
         crackBusterItems.add((new Pickaxe()).getItem());
+        crackBusterItems.add((new Sniffer()).getItem());
+        crackBusterItems.add((new Crack()).getItem(2));
 
         giveTeamItems(crackBusterItems, Team.CRACK_BUSTER);
 
         updateAllPlayerScoreboards();
+
+        // start hunter teleport action bar message task
+        hunterTeleportMessageTask = new BukkitRunnable() {
+            int time = hunterTeleportDelay;
+            @Override
+            public void run() {
+                CommonUtil.sendActionBarMessageToAll(ChatColor.RED + "Hunter Teleport in " + time + " seconds");
+                --time;
+            }
+        }.runTaskTimer(CrackBusters.instance, 0L, 20L);
 
         // start hunter teleport task
         hunterTeleportTask = new BukkitRunnable() {
             @Override
             public void run() {
                 teleportTeam(Team.HUNTER, gameSpawn);
+                Bukkit.broadcastMessage(ChatColor.RED + "Hunters Released");
+                SoundUtil.playGlobalSound(Sound.ENTITY_ELDER_GUARDIAN_CURSE, 1, .5f);
+                hunterTeleportMessageTask.cancel();
             }
         }.runTaskLater(CrackBusters.instance, 20L * hunterTeleportDelay);
-    }
-
-    private static void setPlayerScoreboard(CBPlayer player) {
-
     }
 
     public static void updateAllPlayerScoreboards() {
@@ -244,7 +264,17 @@ public class GameManager implements Listener {
         teleportTeam(Team.HUNTER, lobbySpawn);
         teleportTeam(Team.CRACK_BUSTER, lobbySpawn);
 
-        hunterTeleportTask.cancel();
+        setTeamGamemode(Team.HUNTER, GameMode.SURVIVAL);
+        setTeamGamemode(Team.CRACK_BUSTER, GameMode.SURVIVAL);
+        setTeamGamemode(Team.SPECTATOR, GameMode.SURVIVAL);
+
+        if(hunterTeleportTask != null) hunterTeleportTask.cancel();
+        if(hunterTeleportMessageTask != null) hunterTeleportMessageTask.cancel();
+
+        for(CBPlayer player : players.values()) {
+            setPlayerTeam(player.getPlayer(), Team.CRACK_BUSTER);
+        }
+        deadCrackBusters.clear();
 
         updateAllPlayerScoreboards();
     }
@@ -334,10 +364,11 @@ public class GameManager implements Listener {
         }
     }
 
+
     @EventHandler
     public static void handlePlayerJoin(PlayerJoinEvent event) {
         players.put(event.getPlayer().getUniqueId(), new CBPlayer(event.getPlayer()));
-        spectators.add(players.get(event.getPlayer().getUniqueId()));
+        crackBusters.add(players.get(event.getPlayer().getUniqueId()));
         players.get(event.getPlayer().getUniqueId()).updateScoreboard();
     }
 
@@ -357,7 +388,7 @@ public class GameManager implements Listener {
         if(gameState == GameState.PLACING && player.getTeam() == Team.HUNTER) {
             if(hiddenBlock.isPlaced()) {
                 player.sendErrorMessage("Could not place block because it is already placed at "
-                        + hiddenBlock.getLocation());
+                        + hiddenBlock.getLocation().toVector());
                 event.setCancelled(true);
                 return;
             }
@@ -375,8 +406,6 @@ public class GameManager implements Listener {
             }
             // check if placed on pedestal
             if(!hiddenBlock.getPedestalLocation().equals(location)) {
-                System.out.println(location);
-                System.out.println(hiddenBlock.getPedestalLocation());
                 player.sendErrorMessage("Place the block on the correct pedestal!");
                 event.setCancelled(true);
                 return;
@@ -392,7 +421,7 @@ public class GameManager implements Listener {
                         new ArrayList<>(Collections.singletonList(hiddenBlock.getColor().asBungee().getColor()))), "Found", 10, 60, 10);
 
                 // give player speed
-                player.applyPotionEffect(PotionEffectType.SPEED, blockPlacedSpeedDuration, blockPlacedSpeedAmplifier);
+                player.applyPotionEffect(PotionEffectType.SPEED, blockPlacedSpeedDuration * 20, blockPlacedSpeedAmplifier);
             }
         }
     }
@@ -425,6 +454,11 @@ public class GameManager implements Listener {
                 event.setCancelled(true);
                 return;
             }
+            if(!hiddenBlock.getLocation().equals(block.getLocation())) {
+                player.sendErrorMessage("This is not the hidden block");
+                event.setCancelled(true);
+                return;
+            }
             ItemStack item = player.getPlayer().getInventory().getItemInMainHand();
             CBItem cbItem = ItemUtil.getCBItem(item);
             if(cbItem instanceof Pickaxe) {
@@ -441,7 +475,13 @@ public class GameManager implements Listener {
 
     @EventHandler
     public static void handlePlayerMove(PlayerMoveEvent event) {
+        if(gameState != GameState.BREAKING) {
+            return;
+        }
         CBPlayer player = players.get(event.getPlayer().getUniqueId());
+        if(player.getTeam() == Team.SPECTATOR || deadCrackBusters.contains(player)) {
+            return;
+        }
         Location location = player.getPlayer().getLocation();
         long timeOfLastZone = zoneCooldown.getOrDefault(player, System.currentTimeMillis() - zoneCooldownTime);
         // check if player is off cooldown
@@ -468,10 +508,72 @@ public class GameManager implements Listener {
             // check if player is inside zone transition cube
             if(location.getX() >= minX && location.getX() <= maxX && location.getY() >= minY
                     && location.getY() <= maxY && location.getZ() >= minZ && location.getZ() <= maxZ) {
-                Bukkit.broadcastMessage(ChatColor.BOLD + "A player has cross the " +
-                        ColorUtils.colorizeText("#0#" + zone.getName(), new ArrayList<>(Arrays.asList(hiddenBlocks.get(zone.getMaterial()).getColor().asBungee().getColor()))));
+                Bukkit.broadcastMessage(ChatColor.BOLD + "A player has crossed the " + zone.getColoredName() + " Zone");
                 player.setZone(zone);
                 zoneCooldown.put(player, System.currentTimeMillis());
+                player.updateScoreboard();
+            }
+        }
+    }
+
+    @EventHandler
+    public static void handlePlayerDamage(EntityDamageEvent event) {
+        if(event.getEntity() instanceof Player) {
+            CBPlayer player = players.get(((Player) event.getEntity()).getUniqueId());
+            if(gameState != GameState.BREAKING) {
+                return;
+            }
+            if(event.getDamageSource().getDamageType() != DamageType.PLAYER_ATTACK) {
+                event.setCancelled(true);
+                return;
+            }
+            CBPlayer damager = players.get(((Player) event.getDamageSource().getCausingEntity()).getUniqueId());
+            if(damager == null) return;
+            if(damager.getTeam() != Team.HUNTER) {
+                event.setCancelled(true);
+                return;
+            }
+            if(player.getTeam() != Team.CRACK_BUSTER) {
+                event.setCancelled(true);
+                return;
+            }
+            CBItem item = ItemUtil.getCBItem(damager.getPlayer().getInventory().getItemInMainHand());
+            if(item instanceof Sword) {
+                // kill player
+                Bukkit.broadcastMessage(net.md_5.bungee.api.ChatColor.of(Team.CRACK_BUSTER.getColor()) + player.getPlayer().getName()
+                        + ChatColor.WHITE + " was killed by " + net.md_5.bungee.api.ChatColor.of(Team.HUNTER.getColor()) + damager.getPlayer().getName());
+
+                // Add player to dead players list
+                deadCrackBusters.add(player);
+                crackBusters.remove(player);
+
+                // check if player had one of the blocks
+                for(Material block : hiddenBlocks.keySet()) {
+                    if(player.getPlayer().getInventory().contains(block)) {
+                        // give random player block if player had it
+                        crackBusters.get(random.nextInt(crackBusters.size())).getPlayer().getInventory().addItem(new ItemStack(block));
+                    }
+                }
+                player.getPlayer().getInventory().clear();
+
+                // set gamemode
+                player.getPlayer().setGameMode(GameMode.SPECTATOR);
+                player.getPlayer().getWorld().strikeLightningEffect(player.getPlayer().getLocation());
+
+                // check if all crack busters are dead
+                if(crackBusters.isEmpty()) {
+                    endGame(player.getPlayer().getWorld(), Team.HUNTER);
+                }
+            }
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public static void handleGamemodeChange(PlayerCommandPreprocessEvent event) {
+        if(gameState == GameState.BREAKING) {
+            if(event.getMessage().startsWith("/gamemode")) {
+                event.setCancelled(true);
             }
         }
     }
@@ -500,6 +602,17 @@ public class GameManager implements Listener {
 
     public static CBPlayer getPlayer(UUID uuid) {
         return players.get(uuid);
+    }
+
+    public static List<CBPlayer> getTeam(Team team) {
+        if(team == Team.HUNTER) {
+            return hunters;
+        } else if(team == Team.CRACK_BUSTER) {
+            return crackBusters;
+        } else if(team == Team.SPECTATOR) {
+            return spectators;
+        }
+        return null;
     }
 
     @Nullable

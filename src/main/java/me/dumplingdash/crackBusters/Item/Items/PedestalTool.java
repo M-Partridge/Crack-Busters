@@ -69,6 +69,7 @@ public class PedestalTool extends CBItem implements RightClickAbility, LeftClick
             }
             GameManager.setZoneLocation(mode, event.getClickedBlock().getLocation(), 1);
         }
+        event.setCancelled(true);
     }
 
     @Override
@@ -78,7 +79,8 @@ public class PedestalTool extends CBItem implements RightClickAbility, LeftClick
             return;
         }
         GameManager.setPedestalLocation(mode, event.getClickedBlock().getLocation());
-        event.getPlayer().sendMessage("Set " + mode.getName() + " to " + event.getClickedBlock().getLocation().toString());
+        event.getPlayer().sendMessage("Set " + mode.getName() + " to " + event.getClickedBlock().getLocation().toVector());
+        event.setCancelled(true);
     }
 
     private Zone getMode(ItemStack item) {

@@ -9,6 +9,7 @@ me\dumplingdash\crackBusters\Core\Keys.class
 me\dumplingdash\crackBusters\Event\Listener\ToggleSneakListener.class
 me\dumplingdash\crackBusters\Core\CBRegistry.class
 me\dumplingdash\crackBusters\Item\Items\ZoneTool.class
+me\dumplingdash\crackBusters\Core\Game\GameManager$7.class
 me\dumplingdash\crackBusters\Commands\StartGameCommand.class
 me\dumplingdash\crackBusters\Utility\ColorUtils.class
 me\dumplingdash\crackBusters\Commands\GiveItemCommand.class

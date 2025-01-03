@@ -7,6 +7,7 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -26,6 +27,7 @@ public class CBPlayer {
     private boolean isSneaking;
     private boolean isInvincible;
     private boolean isDead;
+    private boolean hasDiedThisGame;
     private boolean rebootCollected;
     private Team team;
     private Zone zone;
@@ -34,6 +36,7 @@ public class CBPlayer {
         isSneaking = false;
         isInvincible = false;
         isDead = false;
+        hasDiedThisGame = false;
         rebootCollected = false;
         zone = null;
     }
@@ -42,7 +45,9 @@ public class CBPlayer {
         isDead = false;
         zone = null;
         rebootCollected = false;
+        hasDiedThisGame = false;
         setTeam(Team.CRACK_BUSTER);
+        player.setGameMode(GameMode.SURVIVAL);
     }
 
     public void applyPotionEffect(PotionEffectType type, int duration, int power) {
@@ -60,8 +65,8 @@ public class CBPlayer {
     public void setDead(boolean dead) {
         isDead = dead;
         if(dead) {
-            String displayName = player.getDisplayName();
-            displayName += " ☆";
+            hasDiedThisGame = true;
+            setName();
         }
     }
     public void setTeam(Team newTeam) {
@@ -78,6 +83,19 @@ public class CBPlayer {
     }
     private void setName() {
         String name = team.toString() + " " + player.getName();
+        if(isDead) {
+            if(!rebootCollected) {
+                name += ChatColor.YELLOW + " ☆";
+            }
+        } else {
+            if(rebootCollected) {
+                name += ChatColor.YELLOW + " ★";
+            }
+        }
+
+        if(hasDiedThisGame) {
+            name += ChatColor.RED + " ☠";
+        }
         player.setPlayerListName(name);
         player.setDisplayName(name);
     }
@@ -86,9 +104,8 @@ public class CBPlayer {
     }
     public void setRebootCollected(boolean collected) {
         rebootCollected = collected;
-        if(rebootCollected == true) {
-            String displayName = player.getDisplayName();
-            displayName += " ★";
+        if(rebootCollected) {
+            setName();
         }
     }
     public void updateScoreboard() {
@@ -160,6 +177,9 @@ public class CBPlayer {
     }
     public boolean isDead() {
         return isDead;
+    }
+    public boolean hasDiedThisGame() {
+        return hasDiedThisGame;
     }
     public Zone getZone() {
         return zone;

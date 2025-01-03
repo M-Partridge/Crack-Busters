@@ -4,6 +4,7 @@ import me.dumplingdash.crackBusters.Config.CBConfig;
 import me.dumplingdash.crackBusters.Config.ConfigPaths;
 import me.dumplingdash.crackBusters.Core.Keys;
 import me.dumplingdash.crackBusters.Item.Items.*;
+import me.dumplingdash.crackBusters.Item.Items.Sniffer;
 import me.dumplingdash.crackBusters.Utility.*;
 import me.dumplingdash.crackBusters.CrackBusters;
 import me.dumplingdash.crackBusters.Enums.GameState;
@@ -12,10 +13,7 @@ import me.dumplingdash.crackBusters.Item.CBItem;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.damage.DamageType;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -33,6 +31,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -394,6 +393,7 @@ public class GameManager implements Listener {
         player.getPlayer().teleport(gameSpawn);
         Crack.handlePlayerJoin(player);
         player.setInvincible(true);
+        player.setRebootCollected(false);
         player.setDead(false);
         new BukkitRunnable() {
             @Override
@@ -669,22 +669,51 @@ public class GameManager implements Listener {
         Location location = player.getPlayer().getLocation();
         World world = location.getWorld();
 
-        ArmorStand armorStand = (ArmorStand) world.spawnEntity(location, EntityType.ARMOR_STAND);
-        armorStand.setInvisible(true);
-        armorStand.setCustomName(net.md_5.bungee.api.ChatColor.of(Team.CRACK_BUSTER.getColor()) + "" + ChatColor.BOLD + player.getPlayer().getName() + "'s Reboot Card");  // Set the nametag
-        armorStand.setCustomNameVisible(true);
-        armorStand.setGravity(false);
-        armorStand.setInvulnerable(true);
-        armorStand.setMarker(true);
-        armorStand.setSilent(true);
+        ArmorStand name = (ArmorStand) world.spawnEntity(location, EntityType.ARMOR_STAND);
+        name.setInvisible(true);
+        name.setCustomName(net.md_5.bungee.api.ChatColor.of(Team.CRACK_BUSTER.getColor()) + "" + ChatColor.BOLD + player.getPlayer().getName() + "'s Reboot Card");  // Set the nametag
+        name.setCustomNameVisible(true);
+        name.setGravity(false);
+        name.setInvulnerable(true);
+        name.setMarker(true);
+        name.setSilent(true);
 
-        ItemStack helmet = new ItemStack(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE);
-        armorStand.getEquipment().setHelmet(helmet);
+        ItemStack card = new ItemStack(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE);
+        Item cardItem = world.spawn(location, Item.class);
+        cardItem.setVelocity(new Vector(0, 0, 0));
+        cardItem.setItemStack(card);
+        cardItem.setGravity(false);
+        cardItem.setGlowing(true);
+        cardItem.setPickupDelay(Integer.MAX_VALUE);
 
         // store player uuid in armorstand
-        PersistentDataContainer data = armorStand.getPersistentDataContainer();
+        PersistentDataContainer data = name.getPersistentDataContainer();
         data.set(Keys.rebootCard, PersistentDataType.STRING, player.getPlayer().getUniqueId().toString());
-        rebootCards.add(armorStand);
+        rebootCards.add(name);
+        rebootCards.add(cardItem);
+
+        new BukkitRunnable() {
+            private double time = 0;
+            @Override
+            public void run() {
+                if(!name.isValid()) {
+                    cancel();
+                }
+                Location cardItemLocation = cardItem.getLocation();
+                double y = 0.02 * Math.sin(time);
+                cardItemLocation.add(0, y, 0); // Update Y position based on sine wave
+                cardItemLocation.setYaw(cardItemLocation.getYaw() + 5); // Rotate item smoothly
+
+                // Teleport item and armor stand to the new position
+                cardItem.teleport(cardItemLocation);
+                name.teleport(cardItemLocation.clone().add(0, 1, 0)); // Adjust position for armor stand to be 2 blocks above
+
+                // Apply smoothing to the item's position
+                cardItem.setVelocity(cardItem.getVelocity().multiply(0)); // Reset velocity to prevent physics-based jitter
+
+                time += Math.PI / 80; // Update time for sine wave
+            }
+        }.runTaskTimer(CrackBusters.instance, 0L, 1L);
     }
 
     private static boolean allBlocksHidden() {
@@ -707,7 +736,7 @@ public class GameManager implements Listener {
 
     private static boolean allCrackBustersDead() {
         for(CBPlayer player : crackBusters) {
-            if(!player.isDead()) return false;
+            if(!player.hasDiedThisGame()) return false;
         }
         return true;
     }

@@ -10,6 +10,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 public class ItemUtil {
     public static CBItem getCBItem(ItemStack item) {
+        if(item == null) return null;
         ItemMeta meta = item.getItemMeta();
         if(meta == null) {
             return null;

@@ -4,21 +4,26 @@ import me.dumplingdash.crackBusters.Core.Game.CBPlayer;
 import me.dumplingdash.crackBusters.Core.Game.GameManager;
 import me.dumplingdash.crackBusters.Core.Game.HiddenBlock;
 import me.dumplingdash.crackBusters.Core.Game.Zone;
+import me.dumplingdash.crackBusters.CrackBusters;
 import me.dumplingdash.crackBusters.Enums.Team;
+import me.dumplingdash.crackBusters.Item.ActionBarHover;
 import me.dumplingdash.crackBusters.Item.CBItem;
 import me.dumplingdash.crackBusters.Item.RightClickAbility;
+import me.dumplingdash.crackBusters.Utility.ItemUtil;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-public class Sniffer extends CBItem implements RightClickAbility {
+public class Sniffer extends CBItem implements RightClickAbility, ActionBarHover {
     private static final HashMap<CBPlayer, Long> cooldown = new HashMap<>();
     public static final int cooldownTime = 90; // seconds
     @Override
@@ -99,5 +104,25 @@ public class Sniffer extends CBItem implements RightClickAbility {
     public long getCooldownTime(CBPlayer player) {
         long lastUse = cooldown.getOrDefault(player, 0L);
         return Math.max((lastUse + Sniffer.cooldownTime * 1000) - System.currentTimeMillis(), 0);
+    }
+
+    @Override
+    public void handleActionBarHover(PlayerItemHeldEvent event) {
+        CBPlayer player = GameManager.getPlayer(event.getPlayer().getUniqueId());
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // run until player stops holding the radar
+                if(!(ItemUtil.getCBItem(player.getPlayer().getInventory().getItemInMainHand()) instanceof Sniffer)) {
+                    cancel();
+                }
+                long cooldown = getCooldownTime(player);
+                if(cooldown == 0) {
+                    player.sendActionBarMessage(ChatColor.BOLD + "Sniffer is Ready!");
+                } else {
+                    player.sendActionBarMessage(ChatColor.RED + "Sniffer on cooldown for " + cooldown + " ms");
+                }
+            }
+        }.runTaskTimer(CrackBusters.instance, 0L, 1L);
     }
 }

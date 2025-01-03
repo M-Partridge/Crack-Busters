@@ -4,6 +4,7 @@ import me.dumplingdash.crackBusters.Commands.*;
 import me.dumplingdash.crackBusters.Core.Game.GameManager;
 import me.dumplingdash.crackBusters.CrackBusters;
 import me.dumplingdash.crackBusters.Event.Listener.PlayerInteractListener;
+import me.dumplingdash.crackBusters.Event.Listener.PlayerItemHeldListener;
 import me.dumplingdash.crackBusters.Event.Listener.ToggleSneakListener;
 import me.dumplingdash.crackBusters.Item.CBItem;
 import me.dumplingdash.crackBusters.Item.Items.*;
@@ -25,7 +26,8 @@ public class CBRegistry {
         Arrays.asList(
                 new GameManager(),
                 new ToggleSneakListener(),
-                new PlayerInteractListener()
+                new PlayerInteractListener(),
+                new PlayerItemHeldListener()
         ).forEach(listener -> Bukkit.getServer().getPluginManager().registerEvents(listener, CrackBusters.instance));
     }
     public static void registerCommands() {

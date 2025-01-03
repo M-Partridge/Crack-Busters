@@ -3,18 +3,26 @@ package me.dumplingdash.crackBusters.Item.Items;
 import me.dumplingdash.crackBusters.Core.Game.CBPlayer;
 import me.dumplingdash.crackBusters.Core.Game.GameManager;
 import me.dumplingdash.crackBusters.Core.Game.Zone;
+import me.dumplingdash.crackBusters.CrackBusters;
 import me.dumplingdash.crackBusters.Enums.GameState;
 import me.dumplingdash.crackBusters.Enums.Team;
+import me.dumplingdash.crackBusters.Item.ActionBarHover;
 import me.dumplingdash.crackBusters.Item.CBItem;
 import me.dumplingdash.crackBusters.Item.RightClickAbility;
+import me.dumplingdash.crackBusters.Utility.ItemUtil;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.awt.*;
@@ -22,9 +30,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-public class Radar extends CBItem implements RightClickAbility {
+public class Radar extends CBItem implements RightClickAbility, ActionBarHover {
 
-    private static final HashMap<CBPlayer, Long> cooldown = new HashMap<>();
+    private static final HashMap<CBPlayer, Long> playerCooldowns = new HashMap<>();
     public static final int cooldownTime = 60; // seconds
     @Override
     public String getName() {
@@ -82,7 +90,6 @@ public class Radar extends CBItem implements RightClickAbility {
             player.getPlayer().sendMessage(ChatColor.BOLD + "" + ChatColor.YELLOW + "Radar: " + ChatColor.RESET + "No players within 64 blocks");
         } else {
             closestPlayer.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 2 * 20, 0, false, false, false));
-            cooldown.put(player, System.currentTimeMillis());
             Vector direction = new Vector((float) closestPlayer.getPlayer().getLocation().getX() - player.getPlayer().getLocation().getX(),
                     (float) closestPlayer.getPlayer().getLocation().getY() - player.getPlayer().getLocation().getY(),
                     (float) closestPlayer.getPlayer().getLocation().getZ() - player.getPlayer().getLocation().getZ());
@@ -91,10 +98,32 @@ public class Radar extends CBItem implements RightClickAbility {
             player.getPlayer().teleport(location);
             closestPlayer.getPlayer().sendTitle(ChatColor.RED + "" + ChatColor.BOLD + "LOCATION REVEALED", "", 0, 40, 0);
         }
+
+        playerCooldowns.put(player, System.currentTimeMillis());
     }
 
     public long getCooldownTime(CBPlayer player) {
-        long lastUse = cooldown.getOrDefault(player, 0L);
+        long lastUse = playerCooldowns.getOrDefault(player, 0L);
         return Math.max((lastUse + Radar.cooldownTime * 1000) - System.currentTimeMillis(), 0);
+    }
+
+    @Override
+    public void handleActionBarHover(PlayerItemHeldEvent event) {
+        CBPlayer player = GameManager.getPlayer(event.getPlayer().getUniqueId());
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // run until player stops holding the radar
+                if(!(ItemUtil.getCBItem(player.getPlayer().getInventory().getItemInMainHand()) instanceof Radar)) {
+                    cancel();
+                }
+                long cooldown = getCooldownTime(player);
+                if(cooldown == 0) {
+                    player.sendActionBarMessage(ChatColor.YELLOW + "" + ChatColor.BOLD + "Radar is Ready!");
+                } else {
+                    player.sendActionBarMessage(ChatColor.RED + "Radar on cooldown for " + cooldown + " ms");
+                }
+            }
+        }.runTaskTimer(CrackBusters.instance, 0L, 1L);
     }
 }

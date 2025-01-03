@@ -12,7 +12,7 @@ import java.util.Collections;
 public enum Team {
     SPECTATOR("Spectator", ChatColor.GRAY, org.bukkit.scoreboard.Team.OptionStatus.NEVER),
     HUNTER("Hunter", ChatColor.RED, org.bukkit.scoreboard.Team.OptionStatus.ALWAYS),
-    CRACK_BUSTER("Crack_Buster", ChatColor.BLUE, org.bukkit.scoreboard.Team.OptionStatus.FOR_OTHER_TEAMS);
+    CRACK_BUSTER("Crack Buster", ChatColor.BLUE, org.bukkit.scoreboard.Team.OptionStatus.FOR_OTHER_TEAMS);
 
     private final float darkenAmount = .75f; // Amount to darken [] on team name
     private final String name;

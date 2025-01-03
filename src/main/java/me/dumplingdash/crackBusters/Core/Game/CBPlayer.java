@@ -4,6 +4,7 @@ import me.dumplingdash.crackBusters.Enums.GameState;
 import me.dumplingdash.crackBusters.Enums.Team;
 import me.dumplingdash.crackBusters.Utility.ColorUtils;
 import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -123,5 +124,8 @@ public class CBPlayer {
     }
     public void sendErrorMessage(String error) {
         player.sendMessage(ColorUtils.colorizeText(error, new ArrayList<>(Arrays.asList(new Color(255, 0, 0)))));
+    }
+    public void sendActionBarMessage(String message) {
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(message));
     }
 }

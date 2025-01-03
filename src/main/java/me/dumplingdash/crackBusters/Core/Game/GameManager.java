@@ -205,6 +205,8 @@ public class GameManager implements Listener {
 
         giveTeamItems(crackBusterItems, Team.CRACK_BUSTER);
 
+        Crack.handleGameStart();
+
         updateAllPlayerScoreboards();
 
         // start hunter teleport action bar message task
@@ -384,7 +386,9 @@ public class GameManager implements Listener {
             return;
         }
         HiddenBlock hiddenBlock = hiddenBlocks.get(material);
-
+        if(hiddenBlock == null) {
+            return;
+        }
         if(gameState == GameState.PLACING && player.getTeam() == Team.HUNTER) {
             if(hiddenBlock.isPlaced()) {
                 player.sendErrorMessage("Could not place block because it is already placed at "
@@ -440,6 +444,8 @@ public class GameManager implements Listener {
             }
             hiddenBlock.setPlaced(false);
             hiddenBlock.setFound(false);
+        } else if(gameState == GameState.BREAKING) {
+            event.setCancelled(true);
         }
     }
 
@@ -573,7 +579,7 @@ public class GameManager implements Listener {
     public static void handleGamemodeChange(PlayerCommandPreprocessEvent event) {
         if(gameState == GameState.BREAKING) {
             if(event.getMessage().startsWith("/gamemode")) {
-                event.setCancelled(true);
+                //event.setCancelled(true);
             }
         }
     }

@@ -2,6 +2,7 @@ package me.dumplingdash.crackBusters.Core.Game;
 
 import me.dumplingdash.crackBusters.Config.CBConfig;
 import me.dumplingdash.crackBusters.Config.ConfigPaths;
+import me.dumplingdash.crackBusters.Core.Keys;
 import me.dumplingdash.crackBusters.Item.Items.*;
 import me.dumplingdash.crackBusters.Utility.*;
 import me.dumplingdash.crackBusters.CrackBusters;
@@ -11,6 +12,9 @@ import me.dumplingdash.crackBusters.Item.CBItem;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,6 +26,9 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -61,19 +68,16 @@ public class GameManager implements Listener {
             return super.add(player);
         }
     };
-    private static final ArrayList<CBPlayer> deadCrackBusters = new ArrayList<>() {
-        @Override
-        public boolean add(CBPlayer player) {
-            player.setTeam(Team.CRACK_BUSTER);
-            return super.add(player);
-        }
-    };
     private static int blockPlacedSpeedAmplifier; // amplifier for speed given to player when hidden block is found
     private static int blockPlacedSpeedDuration;
     private static int hunterTeleportDelay; // time before hunters are teleported to the game spawn in seconds
+    private static int respawnInvincibilityTime; // time in seconds before a player can be killed upon respawning
     private static long zoneCooldownTime;
     private static BukkitTask hunterTeleportTask;
     private static BukkitTask hunterTeleportMessageTask;
+    private static List<ItemStack> crackBusterItems;
+    private static List<ItemStack> hunterItems;
+    private static List<Entity> rebootCards;
 
     public static void enable() {
         random = new Random();
@@ -92,6 +96,15 @@ public class GameManager implements Listener {
         blockPlacedSpeedDuration = CBConfig.loadInteger(ConfigPaths.blockPlacedSpeedDuration);
         zoneCooldownTime = CBConfig.loadLong(ConfigPaths.zoneCooldownTimePath);
         hunterTeleportDelay = CBConfig.loadInteger(ConfigPaths.hunterTeleportDelay);
+        respawnInvincibilityTime = CBConfig.loadInteger(ConfigPaths.respawnInvincibilityTime);
+        crackBusterItems = new ArrayList<>();
+        crackBusterItems.add((new Pickaxe()).getItem());
+        crackBusterItems.add((new Sniffer()).getItem());
+        crackBusterItems.add((new Crack()).getItem(2));
+        hunterItems = new ArrayList<>();
+        hunterItems.add((new Sword()).getItem());
+        hunterItems.add((new Radar()).getItem());
+        rebootCards = new ArrayList<>();
     }
 
     public static void disable() {
@@ -113,6 +126,7 @@ public class GameManager implements Listener {
         CBConfig.saveData(ConfigPaths.blockPlacedSpeedDuration, blockPlacedSpeedDuration);
         CBConfig.saveData(ConfigPaths.zoneCooldownTimePath, zoneCooldownTime);
         CBConfig.saveData(ConfigPaths.hunterTeleportDelay, hunterTeleportDelay);
+        CBConfig.saveData(ConfigPaths.respawnInvincibilityTime, respawnInvincibilityTime);
 
         endGame(lobbySpawn.getWorld(), null);
     }
@@ -192,17 +206,9 @@ public class GameManager implements Listener {
         giveTeamPotionEffect(Team.CRACK_BUSTER, PotionEffectType.SLOW_DIGGING, Integer.MAX_VALUE, Integer.MAX_VALUE);
 
         // give players their items
-        List<ItemStack> hunterItems = new ArrayList<>();
-        hunterItems.add((new Sword()).getItem());
-        hunterItems.add((new Radar()).getItem());
+
 
         giveTeamItems(hunterItems, Team.HUNTER);
-
-        List<ItemStack> crackBusterItems = new ArrayList<>();
-        crackBusterItems.add((new Pickaxe()).getItem());
-        crackBusterItems.add((new Sniffer()).getItem());
-        crackBusterItems.add((new Crack()).getItem(2));
-
         giveTeamItems(crackBusterItems, Team.CRACK_BUSTER);
 
         Crack.handleGameStart();
@@ -274,11 +280,17 @@ public class GameManager implements Listener {
         if(hunterTeleportMessageTask != null) hunterTeleportMessageTask.cancel();
 
         for(CBPlayer player : players.values()) {
-            setPlayerTeam(player.getPlayer(), Team.CRACK_BUSTER);
+            player.handleEndGame();
         }
-        deadCrackBusters.clear();
+
+        setAllPlayersAlive();
 
         updateAllPlayerScoreboards();
+
+        for (Entity rebootCard : rebootCards) {
+            rebootCard.remove();
+        }
+        rebootCards.clear();
     }
 
     private static void teleportTeam(Team team, Location location) {
@@ -333,6 +345,12 @@ public class GameManager implements Listener {
         }
     }
 
+    private static void setAllPlayersAlive() {
+        for(CBPlayer player : players.values()) {
+            player.setDead(false);
+        }
+    }
+
     private static void giveTeamItems(List<ItemStack> items, Team team) {
         for(ItemStack item : items) {
             if(item == null) {
@@ -366,12 +384,36 @@ public class GameManager implements Listener {
         }
     }
 
-
+    private static void respawnPlayer(CBPlayer player) {
+        PlayerInventory inventory = player.getPlayer().getInventory();
+        player.getPlayer().setGameMode(GameMode.SURVIVAL);
+        inventory.clear();
+        for (ItemStack item : crackBusterItems) {
+            inventory.addItem(item);
+        }
+        player.getPlayer().teleport(gameSpawn);
+        Crack.handlePlayerJoin(player);
+        player.setInvincible(true);
+        player.setDead(false);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                player.setInvincible(false);
+            }
+        }.runTaskLater(CrackBusters.instance, 20 * respawnInvincibilityTime);
+    }
     @EventHandler
     public static void handlePlayerJoin(PlayerJoinEvent event) {
-        players.put(event.getPlayer().getUniqueId(), new CBPlayer(event.getPlayer()));
-        crackBusters.add(players.get(event.getPlayer().getUniqueId()));
-        players.get(event.getPlayer().getUniqueId()).updateScoreboard();
+        Player player = event.getPlayer();
+        players.put(player.getUniqueId(), new CBPlayer(player));
+        CBPlayer cbPlayer = players.get(player.getUniqueId());
+        crackBusters.add(cbPlayer);
+        cbPlayer.updateScoreboard();
+        if(gameState == GameState.PLACING) {
+            cbPlayer.getPlayer().teleport(lobbySpawn);
+        } else if(gameState == GameState.BREAKING) {
+            respawnPlayer(cbPlayer);
+        }
     }
 
     @EventHandler
@@ -481,11 +523,90 @@ public class GameManager implements Listener {
 
     @EventHandler
     public static void handlePlayerMove(PlayerMoveEvent event) {
+        checkForZoneCross(event);
+        checkForRebootCardPickup(event);
+    }
+
+    @EventHandler
+    public static void handlePlayerDamage(EntityDamageEvent event) {
+        if(event.getEntity() instanceof Player) {
+            CBPlayer player = players.get(((Player) event.getEntity()).getUniqueId());
+            if(gameState != GameState.BREAKING) {
+                return;
+            }
+            if(player.isInvincible()) {
+                event.setCancelled(true);
+                return;
+            }
+            if(event.getDamageSource().getDamageType() != DamageType.PLAYER_ATTACK) {
+                event.setCancelled(true);
+                return;
+            }
+            CBPlayer damager = players.get(((Player) event.getDamageSource().getCausingEntity()).getUniqueId());
+            if(damager == null) return;
+            if(damager.getTeam() != Team.HUNTER) {
+                event.setCancelled(true);
+                return;
+            }
+            if(player.getTeam() != Team.CRACK_BUSTER) {
+                event.setCancelled(true);
+                return;
+            }
+            CBItem item = ItemUtil.getCBItem(damager.getPlayer().getInventory().getItemInMainHand());
+            if(item instanceof Sword) { // kill player
+                // send messages
+                Bukkit.broadcastMessage(net.md_5.bungee.api.ChatColor.of(Team.CRACK_BUSTER.getColor()) + player.getPlayer().getName()
+                        + ChatColor.WHITE + " was killed by " + net.md_5.bungee.api.ChatColor.of(Team.HUNTER.getColor()) + damager.getPlayer().getName());
+
+                player.getPlayer().sendTitle(ChatColor.RED + "" + ChatColor.BOLD + "Killed By", ChatColor.RED + damager.getPlayer().getName(), 0, 50, 10);
+
+                // Add player to dead players list
+                player.setDead(true);
+                crackBusters.remove(player);
+
+                // check if player had one of the blocks
+                for(Material block : hiddenBlocks.keySet()) {
+                    if(player.getPlayer().getInventory().contains(block)) {
+                        // give random player block if player had it
+                        crackBusters.get(random.nextInt(crackBusters.size())).getPlayer().getInventory().addItem(new ItemStack(block));
+                    }
+                }
+                player.getPlayer().getInventory().clear();
+
+                // set gamemode
+                player.getPlayer().setGameMode(GameMode.SPECTATOR);
+
+                // lightning effect
+                player.getPlayer().getWorld().strikeLightningEffect(player.getPlayer().getLocation());
+
+                // spawn reboot card
+                spawnRebootCard(player);
+
+                // check if all crack busters are dead
+                if(allCrackBustersDead()) {
+                    endGame(player.getPlayer().getWorld(), Team.HUNTER);
+                }
+            }
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public static void handleGamemodeChange(PlayerCommandPreprocessEvent event) {
+        // prevent gamemode changes while in breaking state
+        if(gameState == GameState.BREAKING) {
+            if(event.getMessage().startsWith("/gamemode")) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    private static void checkForZoneCross(PlayerMoveEvent event) {
         if(gameState != GameState.BREAKING) {
             return;
         }
         CBPlayer player = players.get(event.getPlayer().getUniqueId());
-        if(player.getTeam() == Team.SPECTATOR || deadCrackBusters.contains(player)) {
+        if(player.getTeam() == Team.SPECTATOR || player.isDead()) {
             return;
         }
         Location location = player.getPlayer().getLocation();
@@ -522,66 +643,48 @@ public class GameManager implements Listener {
         }
     }
 
-    @EventHandler
-    public static void handlePlayerDamage(EntityDamageEvent event) {
-        if(event.getEntity() instanceof Player) {
-            CBPlayer player = players.get(((Player) event.getEntity()).getUniqueId());
-            if(gameState != GameState.BREAKING) {
-                return;
+    private static void checkForRebootCardPickup(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        List<Entity> nearbyEntities = player.getNearbyEntities(2, 2, 2);
+        if(players.get(player.getUniqueId()).getTeam() != Team.CRACK_BUSTER) return;
+        if(players.get(player.getUniqueId()).isDead()) return;
+        List<Entity> toRemove = new ArrayList<>();
+        for (Entity nearbyEntity : nearbyEntities) {
+            if(!(nearbyEntity instanceof ArmorStand)) continue;
+            PersistentDataContainer data = nearbyEntity.getPersistentDataContainer();
+            if(data.has(Keys.rebootCard)) {
+                String uuid = data.get(Keys.rebootCard, PersistentDataType.STRING);
+                if(uuid == null) continue;
+                CBPlayer cbPlayer = players.get(UUID.fromString(uuid));
+                cbPlayer.setRebootCollected(true);
+                respawnPlayer(cbPlayer);
+                nearbyEntity.remove();
+                toRemove.add(nearbyEntity);
             }
-            if(event.getDamageSource().getDamageType() != DamageType.PLAYER_ATTACK) {
-                event.setCancelled(true);
-                return;
-            }
-            CBPlayer damager = players.get(((Player) event.getDamageSource().getCausingEntity()).getUniqueId());
-            if(damager == null) return;
-            if(damager.getTeam() != Team.HUNTER) {
-                event.setCancelled(true);
-                return;
-            }
-            if(player.getTeam() != Team.CRACK_BUSTER) {
-                event.setCancelled(true);
-                return;
-            }
-            CBItem item = ItemUtil.getCBItem(damager.getPlayer().getInventory().getItemInMainHand());
-            if(item instanceof Sword) {
-                // kill player
-                Bukkit.broadcastMessage(net.md_5.bungee.api.ChatColor.of(Team.CRACK_BUSTER.getColor()) + player.getPlayer().getName()
-                        + ChatColor.WHITE + " was killed by " + net.md_5.bungee.api.ChatColor.of(Team.HUNTER.getColor()) + damager.getPlayer().getName());
-
-                // Add player to dead players list
-                deadCrackBusters.add(player);
-                crackBusters.remove(player);
-
-                // check if player had one of the blocks
-                for(Material block : hiddenBlocks.keySet()) {
-                    if(player.getPlayer().getInventory().contains(block)) {
-                        // give random player block if player had it
-                        crackBusters.get(random.nextInt(crackBusters.size())).getPlayer().getInventory().addItem(new ItemStack(block));
-                    }
-                }
-                player.getPlayer().getInventory().clear();
-
-                // set gamemode
-                player.getPlayer().setGameMode(GameMode.SPECTATOR);
-                player.getPlayer().getWorld().strikeLightningEffect(player.getPlayer().getLocation());
-
-                // check if all crack busters are dead
-                if(crackBusters.isEmpty()) {
-                    endGame(player.getPlayer().getWorld(), Team.HUNTER);
-                }
-            }
-            event.setCancelled(true);
         }
+        nearbyEntities.removeAll(toRemove);
     }
 
-    @EventHandler
-    public static void handleGamemodeChange(PlayerCommandPreprocessEvent event) {
-        if(gameState == GameState.BREAKING) {
-            if(event.getMessage().startsWith("/gamemode")) {
-                //event.setCancelled(true);
-            }
-        }
+    private static void spawnRebootCard(CBPlayer player) {
+        Location location = player.getPlayer().getLocation();
+        World world = location.getWorld();
+
+        ArmorStand armorStand = (ArmorStand) world.spawnEntity(location, EntityType.ARMOR_STAND);
+        armorStand.setInvisible(true);
+        armorStand.setCustomName(net.md_5.bungee.api.ChatColor.of(Team.CRACK_BUSTER.getColor()) + "" + ChatColor.BOLD + player.getPlayer().getName() + "'s Reboot Card");  // Set the nametag
+        armorStand.setCustomNameVisible(true);
+        armorStand.setGravity(false);
+        armorStand.setInvulnerable(true);
+        armorStand.setMarker(true);
+        armorStand.setSilent(true);
+
+        ItemStack helmet = new ItemStack(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE);
+        armorStand.getEquipment().setHelmet(helmet);
+
+        // store player uuid in armorstand
+        PersistentDataContainer data = armorStand.getPersistentDataContainer();
+        data.set(Keys.rebootCard, PersistentDataType.STRING, player.getPlayer().getUniqueId().toString());
+        rebootCards.add(armorStand);
     }
 
     private static boolean allBlocksHidden() {
@@ -598,6 +701,13 @@ public class GameManager implements Listener {
             if(!hiddenBlock.isFound()) {
                 return false;
             }
+        }
+        return true;
+    }
+
+    private static boolean allCrackBustersDead() {
+        for(CBPlayer player : crackBusters) {
+            if(!player.isDead()) return false;
         }
         return true;
     }

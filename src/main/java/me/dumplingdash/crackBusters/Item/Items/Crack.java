@@ -80,6 +80,13 @@ public class Crack extends CBItem implements RightClickAbility, ActionBarHover {
         }
     }
 
+    public static void handlePlayerJoin(CBPlayer player) {
+        if(!(uses.containsKey(player))) {
+            return;
+        }
+        uses.put(player, 2);
+    }
+
     public int getUses(CBPlayer player) {
         return uses.getOrDefault(player, 0);
     }

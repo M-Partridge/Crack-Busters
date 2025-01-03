@@ -19,4 +19,5 @@ public class ConfigPaths {
     public static String blockPlacedSpeedDuration = "Game.Potions.BlockPlacedSpeedDuration";
     public static String zoneCooldownTimePath = "Game.Timing.ZoneCooldown";
     public static String hunterTeleportDelay = "Game.Timing.HunterTeleportDelay";
+    public static String respawnInvincibilityTime = "Game.Timing.RespawnInvicibilityTime";
 }

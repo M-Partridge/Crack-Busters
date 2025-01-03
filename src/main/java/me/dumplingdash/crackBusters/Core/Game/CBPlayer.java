@@ -24,12 +24,25 @@ import java.util.HashMap;
 public class CBPlayer {
     private final Player player;
     private boolean isSneaking;
+    private boolean isInvincible;
+    private boolean isDead;
+    private boolean rebootCollected;
     private Team team;
     private Zone zone;
     public CBPlayer(Player player) {
         this.player = player;
         isSneaking = false;
+        isInvincible = false;
+        isDead = false;
+        rebootCollected = false;
         zone = null;
+    }
+    public void handleEndGame() {
+        isInvincible = false;
+        isDead = false;
+        zone = null;
+        rebootCollected = false;
+        setTeam(Team.CRACK_BUSTER);
     }
 
     public void applyPotionEffect(PotionEffectType type, int duration, int power) {
@@ -37,6 +50,19 @@ public class CBPlayer {
     }
     public void setSneaking(boolean sneaking) {
         this.isSneaking = sneaking;
+    }
+    public void setInvincible(boolean invincible) {
+        isInvincible = invincible;
+        if(!invincible) {
+            player.sendTitle(ChatColor.RED + "" + ChatColor.BOLD + "You Are No Longer", ChatColor.RED + "" + ChatColor.BOLD + "Invincible", 0, 50, 10);
+        }
+    }
+    public void setDead(boolean dead) {
+        isDead = dead;
+        if(dead) {
+            String displayName = player.getDisplayName();
+            displayName += " ☆";
+        }
     }
     public void setTeam(Team newTeam) {
         player.sendMessage("setting team to " + newTeam.getName());
@@ -48,12 +74,22 @@ public class CBPlayer {
         newTeam.getTeam().addEntry(player.getName());
 
         // Update Display Name
+        setName();
+    }
+    private void setName() {
         String name = team.toString() + " " + player.getName();
         player.setPlayerListName(name);
         player.setDisplayName(name);
     }
     public void setZone(Zone newZone) {
         zone = newZone;
+    }
+    public void setRebootCollected(boolean collected) {
+        rebootCollected = collected;
+        if(rebootCollected == true) {
+            String displayName = player.getDisplayName();
+            displayName += " ★";
+        }
     }
     public void updateScoreboard() {
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
@@ -118,6 +154,12 @@ public class CBPlayer {
     }
     public boolean isSneaking() {
         return isSneaking;
+    }
+    public boolean isInvincible() {
+        return isInvincible;
+    }
+    public boolean isDead() {
+        return isDead;
     }
     public Zone getZone() {
         return zone;

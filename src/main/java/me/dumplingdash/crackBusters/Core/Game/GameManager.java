@@ -530,7 +530,7 @@ public class GameManager implements Listener {
     @EventHandler
     public static void handlePlayerDamage(EntityDamageEvent event) {
         if(event.getEntity() instanceof Player) {
-            CBPlayer player = players.get(((Player) event.getEntity()).getUniqueId());
+            CBPlayer player = players.get(event.getEntity().getUniqueId());
             if(gameState != GameState.BREAKING) {
                 return;
             }
@@ -584,7 +584,7 @@ public class GameManager implements Listener {
 
                 // check if all crack busters are dead
                 if(allCrackBustersDead()) {
-                    endGame(player.getPlayer().getWorld(), Team.HUNTER);
+                    //endGame(player.getPlayer().getWorld(), Team.HUNTER);
                 }
             }
             event.setCancelled(true);

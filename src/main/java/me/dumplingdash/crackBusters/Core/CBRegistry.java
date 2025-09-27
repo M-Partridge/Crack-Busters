@@ -3,6 +3,7 @@ package me.dumplingdash.crackBusters.Core;
 import me.dumplingdash.crackBusters.Commands.*;
 import me.dumplingdash.crackBusters.Core.Game.GameManager;
 import me.dumplingdash.crackBusters.CrackBusters;
+import me.dumplingdash.crackBusters.Event.Listener.InventoryClickListener;
 import me.dumplingdash.crackBusters.Event.Listener.PlayerInteractListener;
 import me.dumplingdash.crackBusters.Event.Listener.PlayerItemHeldListener;
 import me.dumplingdash.crackBusters.Event.Listener.ToggleSneakListener;
@@ -25,6 +26,7 @@ public class CBRegistry {
     public static void registerListeners() {
         Arrays.asList(
                 new GameManager(),
+                new InventoryClickListener(),
                 new ToggleSneakListener(),
                 new PlayerInteractListener(),
                 new PlayerItemHeldListener()
@@ -54,6 +56,7 @@ public class CBRegistry {
     public static void registerItems() {
         Arrays.asList(
                 new Crack(),
+                new Ghost(),
                 new Sniffer(),
                 new Sword(),
                 new PedestalTool(),

@@ -121,7 +121,13 @@ public class Radar extends CBItem implements RightClickAbility, ActionBarHover {
                 if(cooldown == 0) {
                     player.sendActionBarMessage(ChatColor.YELLOW + "" + ChatColor.BOLD + "Radar is Ready!");
                 } else {
-                    player.sendActionBarMessage(ChatColor.RED + "Radar on cooldown for " + cooldown + " ms");
+                    // round cooldown to seconds
+                    cooldown = (long) Math.ceil(cooldown / 1000.0);
+                    if(cooldown == 1) {
+                        player.sendActionBarMessage(ChatColor.RED + "Radar on cooldown for 1 second");
+                    } else {
+                        player.sendActionBarMessage(ChatColor.RED + "Radar on cooldown for " + cooldown + " seconds");
+                    }
                 }
             }
         }.runTaskTimer(CrackBusters.instance, 0L, 1L);

@@ -635,7 +635,7 @@ public class GameManager implements Listener {
             // check if player is inside zone transition cube
             if(location.getX() >= minX && location.getX() <= maxX && location.getY() >= minY
                     && location.getY() <= maxY && location.getZ() >= minZ && location.getZ() <= maxZ) {
-                Bukkit.broadcastMessage(ChatColor.BOLD + "A player has crossed the " + zone.getColoredName() + " Zone");
+                Bukkit.broadcastMessage("A player has crossed the " + ChatColor.BOLD + zone.getColoredName() + " Zone");
                 player.setZone(zone);
                 zoneCooldown.put(player, System.currentTimeMillis());
                 player.updateScoreboard();

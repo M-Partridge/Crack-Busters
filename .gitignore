@@ -1,14 +1,14 @@
 # IntelliJ
-/.idea/
+.idea/
 /*.iml
 workspace.xml
 shelf/
 
 # Build output
-/build/
-/target/
-/out/
-/bin/
+build/
+target/
+out/
+bin/
 
 # Gradle
 /.gradle/
@@ -28,3 +28,4 @@ Thumbs.db
 
 # Misc
 *.tmp
+pom.xml

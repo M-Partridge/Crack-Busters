@@ -1,31 +1,30 @@
-# IntelliJ IDEA
-.idea/
-*.iml
-*.iws
-out/
+# IntelliJ
+/.idea/
+/*.iml
+workspace.xml
+shelf/
+
+# Build output
+/build/
+/target/
+/out/
+/bin/
 
 # Gradle
-.gradle/
-build/
-
-# Maven
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-
-# Logs
-*.log
-
-# OS-specific
-.DS_Store
-Thumbs.db
+/.gradle/
+/gradle/
+/gradlew
+gradlew.bat
 
 # Java
 *.class
+*.jar
+*.war
+*.log
 
-# Other
-shelf/
-.idea/workspace.xml
+# OS stuff
+.DS_Store
+Thumbs.db
+
+# Misc
+*.tmp

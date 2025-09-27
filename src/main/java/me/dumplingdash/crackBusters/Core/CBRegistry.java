@@ -56,7 +56,6 @@ public class CBRegistry {
     public static void registerItems() {
         Arrays.asList(
                 new Crack(),
-                new Ghost(),
                 new Sniffer(),
                 new Sword(),
                 new PedestalTool(),

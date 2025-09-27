@@ -1,5 +1,5 @@
 # IntelliJ
-.idea/
+/.idea/
 /*.iml
 workspace.xml
 shelf/
@@ -28,4 +28,4 @@ Thumbs.db
 
 # Misc
 *.tmp
-pom.xml
+/pom.xml
